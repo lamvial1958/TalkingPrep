@@ -1,0 +1,25 @@
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Cache de modelos do Demucs / PyTorch
+.cache/
+torch_hub/
+
+# Pasta de saída do pipeline (gerada a cada execução)
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
