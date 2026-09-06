@@ -4,6 +4,10 @@
 
 Este arquivo é a especificação completa do projeto. Leia-o integralmente antes de escrever qualquer código. O objetivo é construir uma ferramenta de linha de comando (CLI) local, não um serviço em nuvem, não uma API, não um processo residente. É executada sob demanda pelo usuário.
 
+**Princípio transversal, obrigatório em todo o projeto:** o usuário é iniciante na parte técnica/operacional deste fluxo. Toda ação manual que ele precisar executar fora da automação — qualquer passo dentro do Talking Photos, qualquer escolha de arquivo, qualquer decisão que dependa dele — deve ser descrita pela ficha técnica de saída de forma explícita, sequencial e sem pressupor conhecimento prévio. Isso vale para TODA saída de texto do TalkingPrep (fichas técnicas individuais, ficha de dueto, mensagens de aviso no terminal, README), não apenas para o checklist de dueto da Seção 11, onde esse padrão já foi aplicado como referência de nível de detalhe esperado. Nenhuma instrução deve dizer apenas "configure conforme necessário" ou equivalente vago — cada passo deve dizer exatamente onde clicar/o que selecionar/o que digitar, na medida em que a informação for conhecida (baseada no manual do Talking Photos já fornecido). Onde a especificação exata de uma tela da plataforma não for conhecida com certeza, o texto deve dizer isso abertamente, em vez de inventar um passo de interface não verificado.
+
+**Formato de arquivo, obrigatório em todo o projeto:** toda e qualquer instrução gerada para o usuário em forma de arquivo (ficha técnica, ficha de dueto, ou qualquer outro documento de saída) deve ser salva em `.txt`, nunca em `.md`. Isso vale mesmo quando o conteúdo é estruturado em seções/checklists — usar formatação em texto simples (ex.: títulos em maiúsculas ou sublinhados com `---`, listas com `-` ou números, sem sintaxe Markdown como `#`, `**`, `` ` ``) em vez de sintaxe Markdown, já que o arquivo não será renderizado como Markdown.
+
 ---
 
 ## 1. Propósito do Projeto
@@ -104,7 +108,7 @@ Estas regras vêm do manual oficial da plataforma e devem ser codificadas como u
    - Gerar um bloco de texto com sugestão de prompt de imagem/avatar, combinando: (a) tema/imagética extraída da letra (ex.: chuva, mãos, intimidade — no caso da faixa de teste "Gocce di Noi"), com (b) as diretrizes técnicas fixas anti-"dancinha" da Seção 5.
    - Este passo pode ser um template simples preenchido com palavras-chave extraídas da letra (não é necessário machine learning; extração por palavras-chave ou até input manual do usuário sobre "tema visual desejado" é aceitável — decidir a abordagem mais simples e confiável).
 
-6. **Geração da ficha técnica final** (arquivo `.md` ou `.txt`, dentro da pasta de saída), contendo:
+6. **Geração da ficha técnica final** (arquivo `.txt`, texto simples, sem sintaxe Markdown, dentro da pasta de saída), contendo:
    - Nome da música, data de processamento.
    - Metadados técnicos do áudio original.
    - Resultado da análise de energia (trechos sinalizados).
@@ -153,9 +157,49 @@ Ao final da execução, imprimir no terminal um resumo claro: duração da faixa
 - [ ] A ferramenta funciona sem GPU.
 - [ ] Nenhum processo permanece em execução após o comando terminar.
 - [ ] README do projeto explica claramente: instalação (dependências, incluindo `ffmpeg` como dependência de sistema), uso, e a ressalva de que o download do modelo Demucs exige internet na primeira execução.
+- [ ] Rodar o comando em modo `--duet` com duas faixas de teste produz duas pastas de saída corretas, detecta corretamente divergência de duração entre elas (testar com faixas de duração propositalmente diferentes), e gera a `ficha_dueto.md` com o checklist completo e compreensível.
+- [ ] Toda instrução dirigida ao usuário em qualquer saída do TalkingPrep (ficha técnica, ficha de dueto, mensagens de terminal, README) é sequencial, explícita, e não usa formulações vagas como "configure conforme necessário" — conforme o Princípio Transversal descrito na abertura deste documento.
 
 ---
 
 ## 10. Fora de Discussão
 
 Não sugerir, em nenhuma iteração futura deste projeto, a construção de um pipeline de geração de vídeo/avatar como substituto do Talking Photos, a menos que o usuário explicitamente reabra essa discussão. Essa decisão já foi tomada e justificada (qualidade e velocidade da ferramenta comercial superam qualquer alternativa open-source viável nas condições de hardware disponíveis).
+
+---
+
+## 11. Modo Dueto (Duet Mode)
+
+### Pré-requisito de entrada
+
+O usuário deve fornecer DUAS faixas de áudio já separadas por cantor, seguindo o Passo 1 do fluxo de dueto documentado no manual do Talking Photos: Áudio A (voz do Cantor 1, com silêncio nos trechos do Cantor 2) e Áudio B (voz do Cantor 2, com silêncio nos trechos do Cantor 1). Essa separação por cantor é responsabilidade do usuário na etapa de composição/geração musical, e não deve ser tentada automaticamente pelo TalkingPrep.
+
+Fora de escopo, explicitamente: qualquer tentativa de detectar automaticamente "quem está cantando quando" dentro de uma única faixa mista de dois cantores. Não implementar, nem como experimento.
+
+### Interface de linha de comando
+
+Adicionar um modo dueto ativado por flag, com os seguintes argumentos:
+- `--duet` (ativa o modo)
+- `--audio-a` (obrigatório em modo dueto)
+- `--audio-b` (obrigatório em modo dueto)
+- `--lyrics-a` (opcional)
+- `--lyrics-b` (opcional)
+- `--title` (opcional, nome do dueto)
+
+### Pipeline em modo dueto
+
+Rodar o pipeline padrão (separação vocal via Demucs, limpeza, normalização, análise de energia) de forma independente para a Faixa A e a Faixa B, gerando uma pasta de saída para cada, dentro de uma pasta pai única do dueto.
+
+Validação obrigatória: comparar a duração das duas faixas processadas. Se divergirem, emitir aviso destacado na ficha técnica, pois isso compromete a sincronização entre os dois vídeos na montagem final.
+
+### Ficha técnica específica de dueto
+
+Gerar, além das duas fichas técnicas individuais, um arquivo adicional (`ficha_dueto.txt`, texto simples, sem sintaxe Markdown) com um checklist manual, passo a passo, redigido em linguagem direta e sem pressupor conhecimento técnico prévio do usuário, cobrindo:
+
+1. Renderizar o vídeo do Cantor A no Talking Photos usando a Imagem A + o áudio vocal isolado da Faixa A (respeitando o limite prático de 5 minutos por render).
+2. Renderizar o vídeo do Cantor B no Talking Photos usando a Imagem B + o áudio vocal isolado da Faixa B.
+3. Escolher UM dos dois métodos de montagem final e explicar as duas opções com clareza:
+   - **(a) Telas Alternadas:** importar os dois vídeos no módulo "Mix Videos" do próprio Talking Photos e alternar a sequência entre Cantor A e Cantor B conforme a estrutura da música.
+   - **(b) Composição Lado a Lado:** importar os dois vídeos em um editor externo (CapCut, Premiere ou DaVinci Resolve) e dividir a tela; quando um cantor estiver em silêncio na própria faixa, o avatar dele permanecerá de boca fechada automaticamente, enquanto o outro canta do lado oposto do quadro.
+
+Esse checklist deve ser o mais explícito possível: o usuário não deve precisar deduzir nenhum passo por conta própria — ver o Princípio Transversal na abertura deste documento, que rege o nível de detalhe exigido em toda saída de texto do TalkingPrep, não apenas neste checklist.

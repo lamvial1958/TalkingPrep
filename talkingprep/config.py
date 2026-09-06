@@ -80,3 +80,7 @@ DEFAULT_SILENCE_THRESHOLD_DB = -40.0
 
 # Duração mínima (segundos) abaixo da qual a análise de energia é considerada pouco útil.
 MIN_USEFUL_DURATION_SEC = 5.0
+
+# Tolerância (segundos) para divergência de duração entre as duas faixas processadas
+# no Modo Dueto (Seção 11). Acima disso, um aviso destacado é emitido.
+DUET_DURATION_TOLERANCE_SEC = 1.0

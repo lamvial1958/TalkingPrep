@@ -86,20 +86,73 @@ faixa muito longa ou muito curta) e o caminho da pasta de saída gerada.
 
 ---
 
+## Modo Dueto
+
+Para faixas de dueto, você precisa fornecer duas faixas de áudio **já separadas por
+cantor** (Áudio A com silêncio nos trechos do Cantor B, e vice-versa) — essa separação é
+feita por você na etapa de composição, o TalkingPrep não tenta identificar
+automaticamente quem está cantando quando dentro de uma faixa mista.
+
+```bash
+python talkingprep.py --duet \
+  --audio-a "cantor_a.wav" --audio-b "cantor_b.wav" \
+  --lyrics-a "letra_a.txt" --lyrics-b "letra_b.txt" \
+  --title "Nome do Dueto"
+```
+
+| Argumento | Obrigatório em `--duet` | Descrição |
+|---|---|---|
+| `--duet` | — | Ativa o Modo Dueto. |
+| `--audio-a` | Sim | Áudio do Cantor A (voz + instrumentos, com silêncio quando só B canta). |
+| `--audio-b` | Sim | Áudio do Cantor B (voz + instrumentos, com silêncio quando só A canta). |
+| `--lyrics-a` | Não | Letra referente aos trechos do Cantor A. |
+| `--lyrics-b` | Não | Letra referente aos trechos do Cantor B. |
+| `--title` | Não | Nome do dueto. Default: `dueto`. |
+
+O pipeline padrão roda de forma independente para cada faixa, e o programa compara a
+duração das duas faixas processadas: se divergirem além de uma pequena tolerância, um
+aviso destacado aparece no terminal e na ficha de dueto, já que isso pode dessincronizar
+os dois vídeos na montagem final.
+
+---
+
 ## Estrutura da pasta de saída
+
+### Modo padrão (uma faixa)
 
 Cada execução cria uma pasta própria em `output/<titulo>_<timestamp>/`, contendo:
 
 ```
 output/
 └── Gocce_di_Noi_20260906_130044/
-    ├── Gocce_di_Noi_vocal_isolado.wav   # stem vocal, cortado nas pontas e normalizado
-    ├── Gocce_di_Noi_instrumental.wav    # stem instrumental (referência)
-    ├── Gocce_di_Noi_original.wav        # cópia do áudio original (referência)
-    └── Gocce_di_Noi_ficha_tecnica.md    # ficha técnica completa
+    ├── Gocce_di_Noi_vocal_isolado.wav     # stem vocal, cortado nas pontas e normalizado
+    ├── Gocce_di_Noi_instrumental.wav      # stem instrumental (referência)
+    ├── Gocce_di_Noi_original.wav          # cópia do áudio original (referência)
+    └── Gocce_di_Noi_ficha_tecnica.txt     # ficha técnica completa (texto simples)
 ```
 
-A **ficha técnica** (`*_ficha_tecnica.md`) contém:
+### Modo dueto
+
+```
+output/
+└── Nome_do_Dueto_dueto_20260906_130044/
+    ├── faixa_a/
+    │   ├── Nome_do_Dueto_a_vocal_isolado.wav
+    │   ├── Nome_do_Dueto_a_instrumental.wav
+    │   ├── Nome_do_Dueto_a_original.wav
+    │   └── Nome_do_Dueto_a_ficha_tecnica.txt
+    ├── faixa_b/
+    │   ├── Nome_do_Dueto_b_vocal_isolado.wav
+    │   ├── Nome_do_Dueto_b_instrumental.wav
+    │   ├── Nome_do_Dueto_b_original.wav
+    │   └── Nome_do_Dueto_b_ficha_tecnica.txt
+    └── ficha_dueto.txt   # checklist explícito de montagem do vídeo final de dueto
+```
+
+Todos os arquivos de instrução são gerados em **texto simples (`.txt`)**, sem sintaxe
+Markdown — nunca em `.md` — para leitura direta em qualquer editor de texto.
+
+A **ficha técnica** de cada faixa contém:
 
 - Nome da música e data de processamento.
 - Metadados técnicos do áudio original (duração, taxa de amostragem, canais, bits).
@@ -108,7 +161,13 @@ A **ficha técnica** (`*_ficha_tecnica.md`) contém:
   categoria/engine/qualidade para a faixa processada.
 - Sugestão de prompt de avatar (baseada na letra fornecida, com as diretrizes
   anti-"dancinha" da plataforma).
-- Checklist manual dos passos que você ainda precisa fazer no Talking Photos.
+- Checklist manual, passo a passo, dos passos que você ainda precisa fazer no Talking
+  Photos — escrito para quem não conhece a interface da plataforma, sem instruções vagas.
+
+A **ficha de dueto** (`ficha_dueto.txt`) contém a verificação de duração entre as duas
+faixas e o checklist de renderização dos dois vídeos individuais + as duas opções de
+montagem final (Telas Alternadas via "Mix Videos", ou Composição Lado a Lado em editor
+externo).
 
 ---
 
@@ -162,7 +221,8 @@ talkingprep/
 ├── audio_processing.py     # Demucs, corte de silêncio e normalização (ffmpeg)
 ├── lyrics.py                # leitura da letra e sugestão de prompt de avatar
 ├── recommendation.py       # lógica de recomendação de categoria/engine/qualidade
-├── report.py                # geração da ficha técnica em Markdown
+├── report.py                # geração da ficha técnica individual (texto simples)
+├── duet_report.py           # verificação de duração e ficha de dueto (Modo Dueto)
 └── errors.py                 # exceções do pipeline
 ```
 
