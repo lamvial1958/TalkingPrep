@@ -5,6 +5,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
+import wave
 from pathlib import Path
 
 from .errors import ExternalToolError
@@ -89,6 +90,28 @@ def trim_silence_edges(input_wav: Path, output_wav: Path, threshold_db: float) -
     _run_ffmpeg(["-i", str(input_wav), "-af", silence_filter, str(output_wav)])
 
 
+def _get_sample_rate(path: Path) -> int:
+    with wave.open(str(path), "rb") as wf:
+        return wf.getframerate()
+
+
 def normalize_loudness(input_wav: Path, output_wav: Path) -> None:
-    """Normaliza o loudness do áudio (EBU R128 / loudnorm, passagem única)."""
-    _run_ffmpeg(["-i", str(input_wav), "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", str(output_wav)])
+    """Normaliza o loudness do áudio (EBU R128 / loudnorm, passagem única).
+
+    O filtro loudnorm do ffmpeg processa internamente em uma taxa de amostragem
+    própria e, se '-ar' não for especificado, pode alterar a taxa de amostragem
+    de saída (ex.: para 192000 Hz). Por isso fixamos '-ar' explicitamente igual
+    à taxa de amostragem de entrada.
+    """
+    sample_rate = _get_sample_rate(input_wav)
+    _run_ffmpeg(
+        [
+            "-i",
+            str(input_wav),
+            "-af",
+            "loudnorm=I=-16:TP=-1.5:LRA=11",
+            "-ar",
+            str(sample_rate),
+            str(output_wav),
+        ]
+    )

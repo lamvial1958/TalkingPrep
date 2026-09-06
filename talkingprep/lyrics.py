@@ -28,9 +28,37 @@ _STOPWORDS = {
     "for", "with", "not", "are", "was", "were", "be", "this", "that", "my",
     "your", "his", "her", "their", "our", "we", "they", "he", "she", "so",
     "just", "but", "or", "as", "at", "by", "from", "all", "if", "when",
+    # advérbios/pronomes genéricos comuns (italiano/português) que não carregam
+    # imagética própria e por isso não devem virar "palavra-chave temática"
+    "oggi", "ogni", "adesso", "sempre", "mai", "tutto", "tutti", "tutta",
+    "tutte", "così", "molto", "meno", "bene", "male", "ecco", "qui", "qua",
+    "prima", "poi", "cosa", "quindi", "allora", "então", "hoje", "cada",
+    "agora", "sempre", "nunca", "tudo", "todos", "toda", "todas", "assim",
+    "muito", "menos", "bem", "mal", "aqui", "ali", "antes", "depois",
+}
+
+# Rótulos de estrutura de composição (cabeçalhos de seção da letra, ex.: "STROFA 1
+# (II TIPO)", "RITORNELLO", "PONTE") — não fazem parte do conteúdo poético e devem
+# ser ignorados na extração de imagética, tanto a linha inteira quanto os termos.
+_SECTION_LABEL_WORDS = {
+    "strofa", "ritornello", "ponte", "finale", "coro", "verso", "refrao",
+    "refrão", "bridge", "chorus", "outro", "intro", "precoro", "tipo", "misto",
+    "estrofe", "estribilho", "introducao", "introdução",
 }
 
 _WORD_RE = re.compile(r"[a-zA-ZÀ-ÿ]+")
+_HEADER_LINE_RE = re.compile(r"^[A-ZÀ-Ý0-9\s()/→\-]+$")
+
+
+def _strip_section_headers(text: str) -> str:
+    """Remove linhas que são cabeçalhos de estrutura (ex.: 'STROFA 1 (II TIPO)')."""
+    kept_lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped and _HEADER_LINE_RE.match(stripped):
+            continue
+        kept_lines.append(line)
+    return "\n".join(kept_lines)
 
 
 def load_lyrics(path: Path | None) -> str | None:
@@ -43,8 +71,12 @@ def load_lyrics(path: Path | None) -> str | None:
 
 
 def extract_keywords(text: str, top_n: int = 6) -> list[str]:
-    words = [w.lower() for w in _WORD_RE.findall(text)]
-    words = [w for w in words if len(w) > 3 and w not in _STOPWORDS]
+    body_text = _strip_section_headers(text)
+    words = [w.lower() for w in _WORD_RE.findall(body_text)]
+    words = [
+        w for w in words
+        if len(w) > 3 and w not in _STOPWORDS and w not in _SECTION_LABEL_WORDS
+    ]
     counts = Counter(words)
     return [word for word, _ in counts.most_common(top_n)]
 
