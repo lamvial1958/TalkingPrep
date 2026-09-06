@@ -11,6 +11,10 @@ automaticamente com o Talking Photos (a plataforma não oferece API pública —
 geração continuam sendo feitos manualmente por você). Não há servidor, API, processo em
 background ou agendador — é um comando que você roda sob demanda, e que termina sozinho.
 
+Você pode usar o TalkingPrep de duas formas: pela **linha de comando** (`talkingprep.py`,
+detalhado abaixo) ou por uma **janela local simples** (`talkingprep_gui.py`), com um
+atalho de desktop — veja a seção "Usando pela janela (sem terminal)".
+
 ---
 
 ## Instalação
@@ -56,7 +60,42 @@ A separação vocal é feita pelo [Demucs](https://github.com/facebookresearch/d
 
 ---
 
-## Uso
+## Usando pela janela (sem terminal)
+
+Se você preferir não digitar comandos, há um atalho chamado **TalkingPrep** na área de
+trabalho (desktop). Basta dar dois cliques nele. Uma janela abre com:
+
+1. Duas abas: "Faixa única" (uma música normal) e "Modo Dueto" (duas faixas separadas por
+   cantor — veja a seção "Modo Dueto" mais abaixo).
+2. Botões "Escolher..." ao lado de cada campo, que abrem o seletor de arquivos do próprio
+   Windows — não é preciso digitar nenhum caminho de arquivo.
+3. Um botão "Processar", que roda o mesmo pipeline da linha de comando. O andamento
+   aparece em tempo real na caixa "Acompanhamento".
+4. Ao final, a caixa "Resultado" mostra um resumo (duração, avisos, pasta de saída), com
+   botões para abrir a pasta de saída ou a ficha técnica diretamente.
+
+Se o atalho não existir na sua área de trabalho (por exemplo, em outra máquina), você pode
+recriá-lo rodando este comando do PowerShell uma vez, a partir da pasta do projeto:
+
+```powershell
+$WshShell = New-Object -ComObject WScript.Shell
+$desktop = [Environment]::GetFolderPath("Desktop")
+$Shortcut = $WshShell.CreateShortcut("$desktop\TalkingPrep.lnk")
+$Shortcut.TargetPath = "$PWD\TalkingPrep.vbs"
+$Shortcut.WorkingDirectory = "$PWD"
+$Shortcut.IconLocation = "$PWD\venv\Scripts\pythonw.exe"
+$Shortcut.Save()
+```
+
+Ou, sem criar atalho nenhum, dê dois cliques diretamente no arquivo `TalkingPrep.vbs` na
+pasta do projeto — ele abre a mesma janela, sem mostrar uma janela de terminal.
+
+Essa janela é apenas uma camada visual sobre o mesmo pipeline da CLI: nenhum servidor é
+iniciado, e nada continua rodando depois que você fecha a janela.
+
+---
+
+## Uso (linha de comando)
 
 ```bash
 python talkingprep.py --audio "Gocce_di_Noi.wav" --lyrics "letra.txt" --title "Gocce di Noi"
@@ -213,7 +252,9 @@ Codificadas em `talkingprep/config.py` como tabela de referência:
 ## Estrutura do código
 
 ```
-talkingprep.py              # ponto de entrada (python talkingprep.py ...)
+talkingprep.py              # ponto de entrada da CLI (python talkingprep.py ...)
+talkingprep_gui.py           # janela local (tkinter) que reaproveita o mesmo pipeline
+TalkingPrep.vbs               # launcher usado pelo atalho do desktop (sem terminal visível)
 talkingprep/
 ├── cli.py                  # argparse + orquestração do pipeline
 ├── config.py               # tabela de regras do Talking Photos AI

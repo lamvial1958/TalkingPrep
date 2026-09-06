@@ -43,6 +43,7 @@ O usuário produz músicas autorais, de qualquer gênero, e usa a plataforma com
 - **Modelo de execução:** sob demanda. O usuário roda o comando toda vez que tiver uma nova faixa. Nenhum processo deve continuar rodando após a conclusão do comando.
 - **Persistência de estado:** nenhuma exigida entre execuções. Cada execução é independente. Não criar banco de dados.
 - **Plataforma-alvo:** ambiente local do usuário (a especificar pelo Claude Code as dependências de sistema operacional; assumir Windows ou macOS como alvo principal, já que é onde o usuário provavelmente vai rodar isso — perguntar ao usuário se não houver certeza).
+- **Interface gráfica local (adendo):** o usuário confirmou querer um ponto de entrada mais amigável do que digitar o comando no terminal — um ícone no desktop e uma tela de resultados legível. Isso é permitido desde que não mude a natureza do projeto: continua sendo um programa local, sob demanda, sem servidor, sem API, sem processo residente. A janela é aberta pelo usuário, roda o mesmo pipeline por baixo, mostra o resultado, e fecha — nada continua rodando em segundo plano depois que a janela é fechada.
 
 ---
 
@@ -52,7 +53,7 @@ O usuário produz músicas autorais, de qualquer gênero, e usa a plataforma com
 - **Separação vocal:** biblioteca `demucs` (modelo `htdemucs`, modo `--two-stems=vocals`). Validado como funcional em ambiente CPU-only (sem GPU), com desempenho aproximado de 1,2x o tempo real de áudio (uma faixa de 3 minutos leva ~3-4 minutos para processar). Não assumir GPU disponível; a ferramenta deve funcionar 100% em CPU.
 - **Manipulação/análise de áudio:** `numpy` + módulo `wave` da biblioteca padrão (já validado) para leitura de metadados e cálculo de envelope RMS. Usar `ffmpeg` (via `subprocess` ou biblioteca `pydub`) para corte de silêncio nas pontas e normalização de loudness (padrão sugerido: normalização de pico ou LUFS, o que for mais simples de implementar de forma confiável).
 - **Interface:** CLI com biblioteca `argparse` (evitar dependências pesadas de CLI framework, não é necessário).
-- **Sem interface gráfica.**
+- **Interface gráfica opcional:** `tkinter` (biblioteca padrão do Python, sem dependência extra) para uma janela local simples com seletor de arquivos e tela de resultado, acessível via ícone no desktop. É uma camada fina sobre o mesmo pipeline da CLI — não substitui a CLI, que continua funcionando normalmente. Nenhum framework web, servidor local ou processo residente.
 
 ---
 
